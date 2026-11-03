@@ -11,37 +11,22 @@ actual suspend fun loadBytesFromPath(path: String): ByteArray {
         throw Error("Can not open file '$path': $error")
     }
 
-    val size = file.let {
-        fseek(it, 0, SEEK_END)
-        val size = ftell(it).toLong()
-        fseek(it, 0, SEEK_SET)
-        size
+    var bytes = ByteArray(64 * 1024)
+    var size = 0
+    while (true) {
+        if (size == bytes.size) bytes = bytes.copyOf(size * 2)
+        val read = bytes.usePinned {
+            fread(it.addressOf(size), 1UL, (bytes.size - size).toULong(), file)
+        }.toInt()
+        if (read == 0) break
+        size += read
     }
-
-    if (size < 0) {
-        fclose(file)
-        throw Error("Can not read file '$path'")
-    }
-
-    if (size > Int.MAX_VALUE.toLong()) {
-        fclose(file)
-        throw Error("File '$path' is too long")
-    }
-
-    if (size == 0L) {
-        fclose(file)
-        return byteArrayOf()
-    }
-
-    val bytes = ByteArray(size.toInt())
-    val result = bytes.usePinned {
-        fread(it.addressOf(0), 1UL, size.toULong(), file)
-    }
+    val failed = ferror(file) != 0
     fclose(file)
 
-    if (result != size.toULong()) {
+    if (failed) {
         throw Error("Can not read file '$path'")
     }
 
-    return bytes
+    return bytes.copyOf(size)
 }
