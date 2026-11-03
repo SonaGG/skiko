@@ -20,3 +20,24 @@ SKIKO_EXPORT KNativePointer org_jetbrains_skia_gpu_graphite_SurfaceFactory__1nWr
             std::move(colorSpace),
             surfaceProps.get()).release());
 }
+
+SKIKO_EXPORT KNativePointer org_jetbrains_skia_gpu_graphite_SurfaceFactory__1nMakeRenderTarget(
+        KNativePointer recorderPtr,
+        KInt width,
+        KInt height,
+        KInt colorType,
+        KInt alphaType,
+        KNativePointer colorSpacePtr,
+        KBoolean mipmapped,
+        KInteropPointer surfacePropsValues) {
+    auto recorder = reinterpret_cast<skgpu::graphite::Recorder*>(recorderPtr);
+    auto colorSpace = sk_ref_sp(reinterpret_cast<SkColorSpace*>(colorSpacePtr));
+    auto imageInfo = SkImageInfo::Make(
+            width, height, static_cast<SkColorType>(colorType), static_cast<SkAlphaType>(alphaType), std::move(colorSpace));
+    auto surfaceProps = skija::SurfaceProps::toSkSurfaceProps(surfacePropsValues);
+    return reinterpret_cast<KNativePointer>(SkSurfaces::RenderTarget(
+            recorder,
+            imageInfo,
+            mipmapped ? skgpu::Mipmapped::kYes : skgpu::Mipmapped::kNo,
+            surfaceProps.get()).release());
+}

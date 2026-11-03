@@ -2,8 +2,9 @@ package org.jetbrains.skia
 
 import org.jetbrains.skia.impl.*
 import org.jetbrains.skia.impl.Library.Companion.staticLoad
+import org.jetbrains.skiko.InternalSkikoApi
 
-class Image internal constructor(ptr: NativePointer) : RefCnt(ptr), IHasImageInfo {
+class Image @InternalSkikoApi constructor(ptr: NativePointer) : RefCnt(ptr), IHasImageInfo {
     companion object {
         /**
          *

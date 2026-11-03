@@ -3,6 +3,7 @@ package org.jetbrains.skia.gpu.graphite
 import org.jetbrains.skia.ColorSpace
 import org.jetbrains.skia.ExternalSymbolName
 import org.jetbrains.skia.ForceNativeThreadState
+import org.jetbrains.skia.ImageInfo
 import org.jetbrains.skia.Surface
 import org.jetbrains.skia.SurfaceProps
 import org.jetbrains.skia.impl.InteropPointer
@@ -57,5 +58,46 @@ private external fun _nWrapBackendTexture(
     recorderPtr: NativePointer,
     backendTexturePtr: NativePointer,
     colorSpacePtr: NativePointer,
+    surfaceProps: InteropPointer,
+): NativePointer
+
+@ExperimentalSkikoApi
+fun Surface.Companion.makeRenderTarget(
+    recorder: Recorder,
+    imageInfo: ImageInfo,
+    mipmapped: Boolean = false,
+    surfaceProps: SurfaceProps? = null,
+): Surface? {
+    return try {
+        Stats.onNativeCall()
+        val ptr = interopScope {
+            _nMakeRenderTarget(
+                recorder.nativePtr,
+                imageInfo.width,
+                imageInfo.height,
+                imageInfo.colorInfo.colorType.ordinal,
+                imageInfo.colorInfo.alphaType.ordinal,
+                getPtr(imageInfo.colorInfo.colorSpace),
+                mipmapped,
+                toInterop(surfaceProps?.packToIntArray()),
+            )
+        }
+        if (ptr == NullPointer) null else Surface(ptr)
+    } finally {
+        reachabilityBarrier(recorder)
+        reachabilityBarrier(imageInfo.colorInfo.colorSpace)
+    }
+}
+
+@ExternalSymbolName("org_jetbrains_skia_gpu_graphite_SurfaceFactory__1nMakeRenderTarget")
+@ForceNativeThreadState
+private external fun _nMakeRenderTarget(
+    recorderPtr: NativePointer,
+    width: Int,
+    height: Int,
+    colorType: Int,
+    alphaType: Int,
+    colorSpacePtr: NativePointer,
+    mipmapped: Boolean,
     surfaceProps: InteropPointer,
 ): NativePointer
