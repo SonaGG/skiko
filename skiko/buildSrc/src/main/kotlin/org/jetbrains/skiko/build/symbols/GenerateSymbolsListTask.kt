@@ -32,6 +32,12 @@ abstract class GenerateSymbolsListTask : DefaultTask() {
     abstract val requiredSymbolFiles: ConfigurableFileCollection
 
     @get:InputFiles
+    abstract val nativeBridgeObjectFiles: ConfigurableFileCollection
+
+    @get:Input
+    abstract val nativeBoundSymbols: ListProperty<String>
+
+    @get:InputFiles
     abstract val skiaLibs: ConfigurableFileCollection
 
     @get:OutputDirectory
@@ -57,7 +63,7 @@ abstract class GenerateSymbolsListTask : DefaultTask() {
         val symbolsUnexported = outDir.resolve("symbols_unexported.txt")
 
         // 1. core exports
-        val coreExportedList = extractSymbols(skiaLibs.files.toList() + coreObjectFiles.files.toList(), true)
+        val coreExportedList = extractSymbols(skiaLibs.files.toList() + coreObjectFiles.files.toList() + nativeBridgeObjectFiles.files.toList(), true)
         coreExports.writeText(coreExportedList.sorted().joinToString("\n"))
 
         // 2. all extension imports
@@ -69,6 +75,7 @@ abstract class GenerateSymbolsListTask : DefaultTask() {
 
         // Keep JVM/JNI infrastructure globals
         extImportedList.addAll(coreExportedList.filter(::isJniInfrastructureSymbol))
+        extImportedList.addAll(nativeBoundSymbols.get())
 
         extImports.writeText(extImportedList.distinct().sorted().joinToString("\n"))
 

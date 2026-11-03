@@ -379,6 +379,27 @@ fun Project.androidLlvmNm(): Provider<String> {
     }
 }
 
+fun SkikoProjectContext.createCompileJvmNativeBridgesTask(
+    targetOs: OS,
+    targetArch: Arch,
+    skiaJvmBindingsDir: Provider<File>,
+    jvmCompile: TaskProvider<CompileSkikoCppTask>,
+) = project.registerSkikoTask<CompileSkikoCppTask>("compileJvmNativeBridges", targetOs, targetArch) {
+    dependsOn(skiaJvmBindingsDir)
+    buildTargetOS.set(targetOs)
+    buildTargetArch.set(targetArch)
+    buildSuffix.set("jvm-native")
+    buildVariant.set(buildType)
+    compiler.set(jvmCompile.flatMap { it.compiler })
+    flags.set(jvmCompile.flatMap { it.flags })
+    sourceRoots.set(projectDirs("src/nativeJsMain/cpp"))
+    val projectDir = project.projectDir
+    includeHeadersNonRecursive(projectDir.resolve("src/nativeJsMain/cpp"))
+    includeHeadersNonRecursive(projectDir.resolve("src/commonMain/cpp/common/include"))
+    includeHeadersNonRecursive(skiaHeadersDirs(skiaJvmBindingsDir.get()))
+    if (targetOs.isWindows) includeHeadersNonRecursive(windowsSdkPaths.includeDirs)
+}
+
 fun SkikoProjectContext.createObjcCompileTask(
     os: OS,
     arch: Arch,
@@ -462,6 +483,21 @@ fun SkikoProjectContext.configureGenerateSymbolsList(
 
         skiaLibs.from(project.files(coreBinaryInputs.staticArchivePaths + coreBinaryInputs.directStaticArchivePaths))
         this.requiredSymbolFiles.from(requiredSymbolFiles)
+
+        nativeBoundSymbols.convention(emptyList())
+        val nativeBridges = "compileJvmNativeBridges$suffix"
+        if (nativeBridges in project.tasks.names) {
+            val compile = project.tasks.named<CompileSkikoCppTask>(nativeBridges)
+            dependsOn(compile)
+            nativeBridgeObjectFiles.from(compile.map { task ->
+                task.outDir.get().asFile.walk().filter { it.name.endsWith(".o") }.toList()
+            })
+            nativeBoundSymbols.set(project.provider {
+                project.fileTree("src") { include("commonMain/**/*.kt", "nativeMain/**/*.kt", "nativeJsMain/**/*.kt") }
+                    .flatMap { file -> Regex("""@(?:ExternalSymbolName|SymbolName)\("([^"]+)"\)""").findAll(file.readText()).map { it.groupValues[1] } }
+                    .distinct()
+            })
+        }
     }
 }
 
@@ -472,6 +508,7 @@ fun SkikoProjectContext.createLinkJvmBindings(
     compileTask: TaskProvider<CompileSkikoCppTask>,
     objcCompileTask: TaskProvider<CompileSkikoObjCTask>?,
     coreLinkedLibraryDirs: FileCollection? = null,
+    nativeBridgesCompile: TaskProvider<CompileSkikoCppTask>? = null,
 ) = project.registerSkikoTask<LinkSkikoTask>("linkJvmBindings", targetOs, targetArch) {
     val target = targetId(targetOs, targetArch)
     val skiaBinSubdir = "out/${buildType.id}-$target"
@@ -493,6 +530,12 @@ fun SkikoProjectContext.createLinkJvmBindings(
     }
     objectFiles = project.fileTree(compileTask.map { it.outDir.get() }) {
         include("**/*.o")
+    }
+    if (nativeBridgesCompile != null) {
+        dependsOn(nativeBridgesCompile)
+        objectFiles += project.fileTree(nativeBridgesCompile.map { it.outDir.get() }) {
+            include("**/*.o")
+        }
     }
     val libNamePrefix = if (targetOs.isWindows) libBaseName else "lib$libBaseName"
     libOutputFileName.set("$libNamePrefix-${targetOs.id}-${targetArch.id}${targetOs.dynamicLibExt}")
@@ -741,8 +784,13 @@ fun SkikoProjectContext.createSkikoJvmJarTask(
     val skiaBindingsDir = registerOrGetSkiaDirProvider(os, arch)
     val compileBindings = createCompileJvmBindingsTask(os, arch, skiaBindingsDir)
     val objcCompile = if (os == OS.MacOS) createObjcCompileTask(os, arch, skiaBindingsDir) else null
+    val nativeBridges = if (os.isWindows && kind == SkikoModuleKind.CORE && skiko.includeNativeBridges) {
+        createCompileJvmNativeBridgesTask(os, arch, skiaBindingsDir, compileBindings)
+    } else {
+        null
+    }
     val linkBindings =
-        createLinkJvmBindings(os, arch, skiaBindingsDir, compileBindings, objcCompile, coreLinkedLibraryDirs)
+        createLinkJvmBindings(os, arch, skiaBindingsDir, compileBindings, objcCompile, coreLinkedLibraryDirs, nativeBridges)
     if (kind == SkikoModuleKind.CORE) {
         configureJvmLinkedLibraryElements(os, arch, linkBindings)
     }

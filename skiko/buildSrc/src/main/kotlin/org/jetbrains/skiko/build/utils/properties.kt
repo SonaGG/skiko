@@ -163,6 +163,9 @@ class SkikoProperties(private val myProject: Project) {
     val targetArch: Arch
         get() = myProject.findProperty("skiko.arch")?.toString()?.let(Arch::byName) ?: hostArch
 
+    val includeNativeBridges: Boolean
+        get() = myProject.findProperty("skiko.includeNativeBridges")?.toString()?.toBoolean() ?: false
+
     val includeTestHelpers: Boolean
         get() = !isRelease
 
