@@ -1,8 +1,5 @@
 package org.jetbrains.skia
 
-import kotlin.jvm.JvmInline
-
-@JvmInline
 actual value class FontStyle internal actual constructor(actual val _value: Int) {
     actual constructor(weight: FontWeight, width: FontWidth, slant: FontSlant) : this(packFontStyle(weight, width, slant))
 

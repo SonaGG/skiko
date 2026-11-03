@@ -57,9 +57,9 @@ jobs:
           command: |
             ./gradlew -p skiko --no-daemon --stacktrace \
               -Pdeploy.version=${{ inputs.version }} -Pdeploy.release=true \
-              -Pskiko.awt.enabled=false -Pskiko.native.linux.enabled=true \
-              -Pskiko.publish.only=^linux \
-              publishToBuildRepo
+              -Pskiko.awt.enabled=false -Pskiko.native.enabled=true \
+              publishLinuxX64PublicationToBuildRepoRepository \
+              publishLinuxArm64PublicationToBuildRepoRepository
       - uses: actions/upload-artifact@v4
         with:
           name: repo-linux
