@@ -362,9 +362,6 @@ SKIKO_JVM_EXPORT jstring javaString(JNIEnv* env, const char* chars, size_t len);
 SKIKO_JVM_EXPORT jstring javaString(JNIEnv* env, const char* chars);
 
 jobject javaFloat(JNIEnv* env, SkScalar val);
-jlong packTwoInts(int32_t a, int32_t b);
-jlong packIPoint(SkIPoint p);
-jlong packISize(SkISize s);
 
 jbyteArray   javaByteArray  (JNIEnv* env, const std::vector<jbyte>& bytes);
 jshortArray  javaShortArray (JNIEnv* env, const std::vector<jshort>& shorts);

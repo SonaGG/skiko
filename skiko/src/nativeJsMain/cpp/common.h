@@ -29,12 +29,6 @@
 
 #include "types.h"
 
-KLong packTwoInts(KInt a, KInt b);
-
-KLong packIPoint(SkIPoint p);
-
-KLong packISize(SkISize p);
-
 namespace skija {
     namespace SamplingMode {
         SkSamplingOptions unpack(KLong val);

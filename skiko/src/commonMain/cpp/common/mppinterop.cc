@@ -3,6 +3,18 @@
 #include "src/core/SkUTF.h"
 #include <iostream>
 
+int64_t packTwoInts(int32_t a, int32_t b) {
+    return (uint64_t (a) << 32) | b;
+}
+
+int64_t packIPoint(SkIPoint p) {
+    return packTwoInts(p.fX, p.fY);
+}
+
+int64_t packISize(SkISize s) {
+    return packTwoInts(s.fWidth, s.fHeight);
+}
+
 namespace skikoMpp {
     namespace skrect {
         void serializeAs4Floats(const SkRect& rect, float* result) {

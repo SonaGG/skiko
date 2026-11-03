@@ -362,7 +362,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_jetbrains_skia_DirectContextKt_Direct
     context->setResourceCacheLimit((size_t) maxResourceBytes);
 }
 
-GrSyncCpu grSyncCpuFromBool(bool syncCpu) {
+static GrSyncCpu grSyncCpuFromBool(bool syncCpu) {
   if (syncCpu) return GrSyncCpu::kYes;
   return GrSyncCpu::kNo;
 }

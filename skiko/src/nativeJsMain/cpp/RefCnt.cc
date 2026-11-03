@@ -8,7 +8,7 @@ public:
     mutable std::atomic<int32_t> fRefCnt;
 };
 
-void unrefSkRefCnt(SkRefCnt* p) {
+static void unrefSkRefCnt(SkRefCnt* p) {
     p->unref();
 }
 

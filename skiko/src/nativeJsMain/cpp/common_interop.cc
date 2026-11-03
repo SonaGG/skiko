@@ -4,18 +4,6 @@
 #include "TextStyle.h"
 #include <stdio.h>
 
-KLong packTwoInts(int32_t a, int32_t b) {
-    return (uint64_t (a) << 32) | b;
-}
-
-KLong packIPoint(SkIPoint p) {
-    return packTwoInts(p.fX, p.fY);
-}
-
-KLong packISize(SkISize p) {
-    return packTwoInts(p.fWidth, p.fHeight);
-}
-
 namespace skija {
 
     namespace SamplingMode {

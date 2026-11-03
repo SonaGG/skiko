@@ -4,6 +4,10 @@
 #include "SkFont.h"
 #include "SkFontMetrics.h"
 
+int64_t packTwoInts(int32_t a, int32_t b);
+int64_t packIPoint(SkIPoint p);
+int64_t packISize(SkISize s);
+
 namespace skikoMpp {
     namespace skrect {
         // TODO: Combine with skija::Rect::copyToInterop
