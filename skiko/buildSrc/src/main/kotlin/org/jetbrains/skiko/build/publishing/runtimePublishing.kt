@@ -12,6 +12,7 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
@@ -21,6 +22,7 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.project
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.support.serviceOf
+import org.gradle.kotlin.dsl.withType
 import org.gradle.nativeplatform.MachineArchitecture
 import org.gradle.nativeplatform.OperatingSystemFamily
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -94,6 +96,11 @@ private fun Project.configurePublishingRepositories(skiko: SkikoProperties) {
                 username = skiko.composeRepoUserName
                 password = skiko.composeRepoKey
             }
+        }
+    }
+    skiko.publishOnly?.let { only ->
+        tasks.withType<PublishToMavenRepository>().configureEach {
+            onlyIf { only.containsMatchIn(publication.name) }
         }
     }
 }

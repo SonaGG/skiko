@@ -241,6 +241,9 @@ class SkikoProperties(private val myProject: Project) {
     val composeRepoKey: String
         get() = System.getenv("COMPOSE_REPO_KEY") ?: ""
 
+    val publishOnly: Regex?
+        get() = myProject.findProperty("skiko.publish.only")?.toString()?.toRegex()
+
     val signHost: String?
         get() = System.getenv("JB_SIGN_HOST")
             ?: (myProject.findProperty("sign_host") as? String)

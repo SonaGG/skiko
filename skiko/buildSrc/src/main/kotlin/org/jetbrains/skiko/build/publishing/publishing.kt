@@ -7,9 +7,11 @@ import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.skiko.build.context.SkikoProjectContext
 import org.jetbrains.skiko.build.context.supportAndroid
@@ -121,6 +123,11 @@ private fun SkikoPublishingContext.configurePublishingRepositories() {
                     password = skiko.composeRepoKey
                 }
             }
+        }
+    }
+    skiko.publishOnly?.let { only ->
+        project.tasks.withType<PublishToMavenRepository>().configureEach {
+            onlyIf { only.containsMatchIn(publication.name) }
         }
     }
 }
