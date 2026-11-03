@@ -71,3 +71,6 @@ private external fun _nCreateVulkanObjects(): LongArray
 
 @ExternalSymbolName("org_jetbrains_skia_gpu_graphite_GraphiteTestHelpers__1nReleaseVulkanObjects")
 private external fun _nReleaseVulkanObjects(devicePtr: NativePointer, instancePtr: NativePointer)
+
+@ExternalSymbolName("org_jetbrains_skia_gpu_graphite_GraphiteTestHelpers__1nReadPixels")
+internal external fun _nReadPixels(contextPtr: NativePointer, surfacePtr: NativePointer, width: Int, height: Int): IntArray

@@ -319,7 +319,12 @@ void RenderNode::endRecording() {
 }
 
 void RenderNode::drawInto(SkCanvas* canvas) {
-    canvas->drawDrawable(this);
+    if (canvas->recorder()) {
+        UnrollDrawableCanvas unrollCanvas(canvas);
+        this->draw(&unrollCanvas);
+    } else {
+        canvas->drawDrawable(this);
+    }
 }
 
 SkFlattenable::Type RenderNode::getFlattenableType() const {

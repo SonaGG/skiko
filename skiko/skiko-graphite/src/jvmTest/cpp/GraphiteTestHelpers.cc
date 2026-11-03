@@ -173,3 +173,46 @@ Java_org_jetbrains_skia_gpu_graphite_GraphiteTestHelpersKt__1nReleaseVulkanObjec
         jlong) {}
 
 #endif
+
+#include "include/core/SkSurface.h"
+#include "include/gpu/graphite/Context.h"
+#include "include/gpu/graphite/GraphiteTypes.h"
+
+namespace {
+struct ReadTarget {
+    std::vector<jint> pixels;
+    int height;
+};
+}
+
+extern "C" JNIEXPORT jintArray JNICALL
+Java_org_jetbrains_skia_gpu_graphite_GraphiteTestHelpersKt__1nReadPixels(
+        JNIEnv* env,
+        jclass,
+        jlong contextPtr,
+        jlong surfacePtr,
+        jint width,
+        jint height) {
+    auto context = reinterpret_cast<skgpu::graphite::Context*>(static_cast<uintptr_t>(contextPtr));
+    auto surface = reinterpret_cast<SkSurface*>(static_cast<uintptr_t>(surfacePtr));
+    ReadTarget target{{}, height};
+    context->asyncRescaleAndReadPixels(
+            surface, SkImageInfo::MakeN32Premul(width, height), SkIRect::MakeWH(width, height),
+            SkImage::RescaleGamma::kSrc, SkImage::RescaleMode::kNearest,
+            [](SkImage::ReadPixelsContext context, std::unique_ptr<const SkImage::AsyncReadResult> result) {
+                if (!result) return;
+                auto target = static_cast<ReadTarget*>(context);
+                auto rowBytes = result->rowBytes(0);
+                auto data = static_cast<const uint8_t*>(result->data(0));
+                for (int y = 0; y < target->height; ++y) {
+                    auto row = reinterpret_cast<const jint*>(data + y * rowBytes);
+                    target->pixels.insert(target->pixels.end(), row, row + rowBytes / 4);
+                }
+            },
+            &target);
+    context->submit(skgpu::graphite::SubmitInfo(skgpu::graphite::SyncToCpu::kYes));
+    context->checkAsyncWorkCompletion();
+    jintArray array = env->NewIntArray(static_cast<jsize>(target.pixels.size()));
+    env->SetIntArrayRegion(array, 0, static_cast<jsize>(target.pixels.size()), target.pixels.data());
+    return array;
+}
