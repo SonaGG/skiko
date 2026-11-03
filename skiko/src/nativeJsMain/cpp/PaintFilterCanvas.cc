@@ -3,6 +3,7 @@
 #include "SkPaintFilterCanvas.h"
 #include "common.h"
 
+namespace {
 class SkikoPaintFilterCanvas : public SkPaintFilterCanvas {
 public:
     SkikoPaintFilterCanvas(
@@ -42,6 +43,7 @@ private:
 
     bool unrollDrawable;
 };
+}
 
 SKIKO_EXPORT void org_jetbrains_skia_PaintFilterCanvas__1nInit
   (KNativePointer canvasPtr, KInteropPointer onFilter) {
