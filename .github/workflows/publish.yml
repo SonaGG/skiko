@@ -1,0 +1,127 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+        type: string
+      repository:
+        description: 'Maven repository URL'
+        required: true
+        type: string
+        default: 'https://maven.cloverclient.com/releases'
+
+jobs:
+  Windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v1
+      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+      - uses: ./.github/actions/setup-prerequisites
+      - shell: bash
+        run: |
+          ./gradlew -p skiko --no-daemon --stacktrace \
+            -Pdeploy.version=${{ inputs.version }} -Pdeploy.release=true \
+            -Pskiko.awt.enabled=true -Pskiko.native.mingw.enabled=true -Pskiko.arch=x64 \
+            "-Pskiko.publish.only=(?i)windowsx64$|mingw" \
+            publishToBuildRepo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repo-windows
+          path: skiko/build/repo
+
+  Linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-prerequisites
+      - uses: ./.github/actions/docker-skiko-run
+        with:
+          image_name: linux-compat
+          command: |
+            ./gradlew -p skiko --no-daemon --stacktrace \
+              -Pdeploy.version=${{ inputs.version }} -Pdeploy.release=true \
+              -Pskiko.awt.enabled=true -Pskiko.arch=x64 \
+              "-Pskiko.publish.only=(?i)linuxx64$" \
+              publishToBuildRepo
+      - uses: ./.github/actions/docker-skiko-run
+        with:
+          image_name: linux-amd64
+          command: |
+            ./gradlew -p skiko --no-daemon --stacktrace \
+              -Pdeploy.version=${{ inputs.version }} -Pdeploy.release=true \
+              -Pskiko.awt.enabled=false -Pskiko.native.linux.enabled=true \
+              "-Pskiko.publish.only=^linux(X64|Arm64)$" \
+              publishToBuildRepo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repo-linux
+          path: skiko/build/repo
+
+  LinuxArm:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-prerequisites
+      - uses: ./.github/actions/docker-skiko-run
+        with:
+          image_name: linux-compat
+          command: |
+            ./gradlew -p skiko --no-daemon --stacktrace \
+              -Pdeploy.version=${{ inputs.version }} -Pdeploy.release=true \
+              -Pskiko.awt.enabled=true -Pskiko.arch=arm64 \
+              "-Pskiko.publish.only=(?i)linuxarm64$" \
+              publishToBuildRepo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repo-linux-arm
+          path: skiko/build/repo
+
+  macOS:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+      - uses: ./.github/actions/setup-prerequisites
+      - shell: bash
+        run: |
+          ./gradlew -p skiko --no-daemon --stacktrace \
+            -Pdeploy.version=${{ inputs.version }} -Pdeploy.release=true \
+            -Pskiko.awt.enabled=true -Pskiko.arch=arm64 \
+            -Pskiko.native.mac.enabled=true -Pskiko.native.linux.enabled=true -Pskiko.native.mingw.enabled=true \
+            "-Pskiko.publish.only=(?i)^(kotlinMultiplatform|awt)$|runtimeelements$|macos" \
+            publishToBuildRepo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repo-macos
+          path: skiko/build/repo
+
+  Upload:
+    needs: [Windows, Linux, LinuxArm, macOS]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: repo-*
+          merge-multiple: true
+          path: repo
+      - shell: bash
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          MAVEN_URL: ${{ inputs.repository }}
+        run: |
+          cd repo
+          find . -type f ! -name 'maven-metadata.xml*' | while read -r file; do
+            curl -fsS -u "$MAVEN_USERNAME:$MAVEN_PASSWORD" -T "$file" "$MAVEN_URL/${file#./}"
+          done
