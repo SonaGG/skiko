@@ -455,6 +455,46 @@ class Image @InternalSkikoApi constructor(ptr: NativePointer) : RefCnt(ptr), IHa
             reachabilityBarrier(dst)
         }
     }
+
+    fun makeRasterImage(): Image? {
+        return try {
+            Stats.onNativeCall()
+            val ptr = _nMakeRasterImage(_ptr)
+            if (ptr == NullPointer) null else Image(ptr)
+        } finally {
+            reachabilityBarrier(this)
+        }
+    }
+
+    fun makeSubset(subset: IRect): Image? {
+        return try {
+            Stats.onNativeCall()
+            val ptr = _nMakeSubset(_ptr, subset.left, subset.top, subset.right, subset.bottom)
+            if (ptr == NullPointer) null else Image(ptr)
+        } finally {
+            reachabilityBarrier(this)
+        }
+    }
+
+    fun makeScaled(imageInfo: ImageInfo, samplingMode: SamplingMode): Image? {
+        return try {
+            Stats.onNativeCall()
+            val ptr = _nMakeScaled(
+                _ptr,
+                imageInfo.width,
+                imageInfo.height,
+                imageInfo.colorInfo.colorType.ordinal,
+                imageInfo.colorInfo.alphaType.ordinal,
+                getPtr(imageInfo.colorInfo.colorSpace),
+                samplingMode._packedInt1(),
+                samplingMode._packedInt2()
+            )
+            if (ptr == NullPointer) null else Image(ptr)
+        } finally {
+            reachabilityBarrier(this)
+            reachabilityBarrier(imageInfo.colorInfo.colorSpace)
+        }
+    }
 }
 
 @ExternalSymbolName("org_jetbrains_skia_Image__1nGetImageInfo")
@@ -590,4 +630,25 @@ private external fun _nAdoptTextureFromAlphaType(
     surfaceOrigin: Int,
     colorType: Int,
     alphaType: Int
+): NativePointer
+
+@ExternalSymbolName("org_jetbrains_skia_Image__1nMakeRasterImage")
+@ForceNativeThreadState
+private external fun _nMakeRasterImage(ptr: NativePointer): NativePointer
+
+@ExternalSymbolName("org_jetbrains_skia_Image__1nMakeSubset")
+@ForceNativeThreadState
+private external fun _nMakeSubset(ptr: NativePointer, left: Int, top: Int, right: Int, bottom: Int): NativePointer
+
+@ExternalSymbolName("org_jetbrains_skia_Image__1nMakeScaled")
+@ForceNativeThreadState
+private external fun _nMakeScaled(
+    ptr: NativePointer,
+    width: Int,
+    height: Int,
+    colorType: Int,
+    alphaType: Int,
+    colorSpacePtr: NativePointer,
+    samplingModeVal1: Int,
+    samplingModeVal2: Int
 ): NativePointer

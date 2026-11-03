@@ -192,3 +192,23 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_jetbrains_skia_ImageKt__1nAdoptTextu
     );
     return reinterpret_cast<jlong>(image.release());
 }
+
+extern "C" JNIEXPORT jlong JNICALL Java_org_jetbrains_skia_ImageKt__1nMakeRasterImage
+  (JNIEnv* env, jclass jclass, jlong ptr) {
+    SkImage* instance = reinterpret_cast<SkImage*>(static_cast<uintptr_t>(ptr));
+    return reinterpret_cast<jlong>(instance->makeRasterImage().release());
+}
+
+extern "C" JNIEXPORT jlong JNICALL Java_org_jetbrains_skia_ImageKt__1nMakeSubset
+  (JNIEnv* env, jclass jclass, jlong ptr, jint left, jint top, jint right, jint bottom) {
+    SkImage* instance = reinterpret_cast<SkImage*>(static_cast<uintptr_t>(ptr));
+    return reinterpret_cast<jlong>(instance->makeSubset(nullptr, SkIRect::MakeLTRB(left, top, right, bottom), {}).release());
+}
+
+extern "C" JNIEXPORT jlong JNICALL Java_org_jetbrains_skia_ImageKt__1nMakeScaled
+  (JNIEnv* env, jclass jclass, jlong ptr, jint width, jint height, jint colorType, jint alphaType, jlong colorSpacePtr, jint samplingModeVal1, jint samplingModeVal2) {
+    SkImage* instance = reinterpret_cast<SkImage*>(static_cast<uintptr_t>(ptr));
+    SkColorSpace* colorSpace = reinterpret_cast<SkColorSpace*>(static_cast<uintptr_t>(colorSpacePtr));
+    SkImageInfo imageInfo = SkImageInfo::Make(width, height, static_cast<SkColorType>(colorType), static_cast<SkAlphaType>(alphaType), sk_ref_sp<SkColorSpace>(colorSpace));
+    return reinterpret_cast<jlong>(instance->makeScaled(imageInfo, skija::SamplingMode::unpackFrom2Ints(env, samplingModeVal1, samplingModeVal2)).release());
+}

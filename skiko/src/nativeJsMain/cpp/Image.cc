@@ -187,3 +187,23 @@ SKIKO_EXPORT KNativePointer org_jetbrains_skia_Image__1nAdoptTextureFromAlphaTyp
 
     return reinterpret_cast<KNativePointer>(image.release());
 }
+
+SKIKO_EXPORT KNativePointer org_jetbrains_skia_Image__1nMakeRasterImage
+  (KNativePointer ptr) {
+    SkImage* instance = reinterpret_cast<SkImage*>(ptr);
+    return reinterpret_cast<KNativePointer>(instance->makeRasterImage().release());
+}
+
+SKIKO_EXPORT KNativePointer org_jetbrains_skia_Image__1nMakeSubset
+  (KNativePointer ptr, KInt left, KInt top, KInt right, KInt bottom) {
+    SkImage* instance = reinterpret_cast<SkImage*>(ptr);
+    return reinterpret_cast<KNativePointer>(instance->makeSubset(nullptr, SkIRect::MakeLTRB(left, top, right, bottom), {}).release());
+}
+
+SKIKO_EXPORT KNativePointer org_jetbrains_skia_Image__1nMakeScaled
+  (KNativePointer ptr, KInt width, KInt height, KInt colorType, KInt alphaType, KNativePointer colorSpacePtr, KInt samplingModeVal1, KInt samplingModeVal2) {
+    SkImage* instance = reinterpret_cast<SkImage*>(ptr);
+    SkColorSpace* colorSpace = reinterpret_cast<SkColorSpace*>(colorSpacePtr);
+    SkImageInfo imageInfo = SkImageInfo::Make(width, height, static_cast<SkColorType>(colorType), static_cast<SkAlphaType>(alphaType), sk_ref_sp<SkColorSpace>(colorSpace));
+    return reinterpret_cast<KNativePointer>(instance->makeScaled(imageInfo, skija::SamplingMode::unpackFrom2Ints(samplingModeVal1, samplingModeVal2)).release());
+}
