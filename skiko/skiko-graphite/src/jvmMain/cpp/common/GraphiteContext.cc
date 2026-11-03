@@ -83,7 +83,7 @@ Java_org_jetbrains_skia_gpu_graphite_GraphiteContextKt__1nMakeRecorder(
     return reinterpret_cast<jlong>(context->makeRecorder(options).release());
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jboolean JNICALL
 Java_org_jetbrains_skia_gpu_graphite_GraphiteContextKt__1nInsertRecording(
         JNIEnv* env,
         jclass,
@@ -95,7 +95,7 @@ Java_org_jetbrains_skia_gpu_graphite_GraphiteContextKt__1nInsertRecording(
         jint signalSemaphoresCount) {
     auto context = reinterpret_cast<skgpu::graphite::Context*>(
             static_cast<uintptr_t>(contextPtr));
-    if (!context) return;
+    if (!context) return false;
 
     skgpu::graphite::InsertRecordingInfo info{};
     info.fRecording = reinterpret_cast<skgpu::graphite::Recording*>(
@@ -129,14 +129,14 @@ Java_org_jetbrains_skia_gpu_graphite_GraphiteContextKt__1nInsertRecording(
     info.fNumSignalSemaphores = signalSemaphores.size();
     info.fSignalSemaphores = signalSemaphores.data();
 
-    context->insertRecording(info);
+    return context->insertRecording(info) == skgpu::graphite::InsertStatus::kSuccess;
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jboolean JNICALL
 Java_org_jetbrains_skia_gpu_graphite_GraphiteContextKt__1nSubmit(
         JNIEnv*, jclass, jlong contextPtr, jboolean syncCpu) {
     auto context = reinterpret_cast<skgpu::graphite::Context*>(
             static_cast<uintptr_t>(contextPtr));
-    context->submit(skgpu::graphite::SubmitInfo(
+    return context->submit(skgpu::graphite::SubmitInfo(
             syncCpu ? skgpu::graphite::SyncToCpu::kYes : skgpu::graphite::SyncToCpu::kNo));
 }

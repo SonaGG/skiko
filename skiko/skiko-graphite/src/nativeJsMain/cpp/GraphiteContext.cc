@@ -48,7 +48,7 @@ SKIKO_EXPORT KNativePointer org_jetbrains_skia_gpu_graphite_GraphiteContext__1nM
     return reinterpret_cast<KNativePointer>(context->makeRecorder(options).release());
 }
 
-SKIKO_EXPORT void org_jetbrains_skia_gpu_graphite_GraphiteContext__1nInsertRecording(
+SKIKO_EXPORT KBoolean org_jetbrains_skia_gpu_graphite_GraphiteContext__1nInsertRecording(
         KNativePointer contextPtr,
         KNativePointer recordingPtr,
         KInteropPointer waitSemaphoresPtrs,
@@ -56,7 +56,7 @@ SKIKO_EXPORT void org_jetbrains_skia_gpu_graphite_GraphiteContext__1nInsertRecor
         KInteropPointer signalSemaphoresPtrs,
         KInt signalSemaphoresCount) {
     auto context = reinterpret_cast<skgpu::graphite::Context*>(contextPtr);
-    if (!context) return;
+    if (!context) return false;
 
     skgpu::graphite::InsertRecordingInfo info{};
     info.fRecording = reinterpret_cast<skgpu::graphite::Recording*>(recordingPtr);
@@ -85,12 +85,12 @@ SKIKO_EXPORT void org_jetbrains_skia_gpu_graphite_GraphiteContext__1nInsertRecor
     info.fNumSignalSemaphores = signalSemaphores.size();
     info.fSignalSemaphores = signalSemaphores.data();
 
-    context->insertRecording(info);
+    return context->insertRecording(info) == skgpu::graphite::InsertStatus::kSuccess;
 }
 
-SKIKO_EXPORT void org_jetbrains_skia_gpu_graphite_GraphiteContext__1nSubmit(
+SKIKO_EXPORT KBoolean org_jetbrains_skia_gpu_graphite_GraphiteContext__1nSubmit(
         KNativePointer contextPtr, KBoolean syncCpu) {
     auto context = reinterpret_cast<skgpu::graphite::Context*>(contextPtr);
-    context->submit(skgpu::graphite::SubmitInfo(
+    return context->submit(skgpu::graphite::SubmitInfo(
             syncCpu ? skgpu::graphite::SyncToCpu::kYes : skgpu::graphite::SyncToCpu::kNo));
 }

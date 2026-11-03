@@ -103,8 +103,8 @@ class GraphiteContext internal constructor(ptr: NativePointer) : Managed(ptr, _F
      *
      * @param recording recording to insert.
      */
-    fun insertRecording(recording: Recording) {
-        insertRecording(InsertRecordingInfo(recording))
+    fun insertRecording(recording: Recording): Boolean {
+        return insertRecording(InsertRecordingInfo(recording))
     }
 
     /**
@@ -113,8 +113,8 @@ class GraphiteContext internal constructor(ptr: NativePointer) : Managed(ptr, _F
      *
      * @param info recording insertion parameters.
      */
-    fun insertRecording(info: InsertRecordingInfo) {
-        try {
+    fun insertRecording(info: InsertRecordingInfo): Boolean {
+        return try {
             Stats.onNativeCall()
             val waitSemPtrs = NativePointerArray(info.waitSemaphores.size)
             val signalSemPtrs = NativePointerArray(info.signalSemaphores.size)
@@ -155,8 +155,8 @@ class GraphiteContext internal constructor(ptr: NativePointer) : Managed(ptr, _F
      *
      * @param syncCpu if `true`, waits for the submitted GPU work to finish before returning.
      */
-    fun submit(syncCpu: Boolean = false) {
-        try {
+    fun submit(syncCpu: Boolean = false): Boolean {
+        return try {
             Stats.onNativeCall()
             _nSubmit(nativePtr, syncCpu)
         } finally {
@@ -209,11 +209,11 @@ private external fun _nInsertRecording(
     waitSemaphoresCount: Int,
     signalSemaphoresPtrs: InteropPointer,
     signalSemaphoresCount: Int,
-)
+): Boolean
 
 @ExternalSymbolName("org_jetbrains_skia_gpu_graphite_GraphiteContext__1nSubmit")
 // Needs ForceNativeThreadState: commits a Metal command buffer to the GPU and can wait for the GPU to sync back to the
 // CPU.
 // Native call path: Context::submit -> QueueManager::submitToGpu -> MtlCommandBuffer::commit
 @ForceNativeThreadState
-private external fun _nSubmit(contextPtr: NativePointer, syncCpu: Boolean)
+private external fun _nSubmit(contextPtr: NativePointer, syncCpu: Boolean): Boolean
