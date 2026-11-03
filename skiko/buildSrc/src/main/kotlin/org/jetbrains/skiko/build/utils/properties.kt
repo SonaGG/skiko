@@ -163,9 +163,6 @@ class SkikoProperties(private val myProject: Project) {
     val targetArch: Arch
         get() = myProject.findProperty("skiko.arch")?.toString()?.let(Arch::byName) ?: hostArch
 
-    val includeNativeBridges: Boolean
-        get() = myProject.findProperty("skiko.includeNativeBridges")?.toString()?.toBoolean() ?: false
-
     val includeTestHelpers: Boolean
         get() = !isRelease
 
@@ -296,6 +293,7 @@ object SkikoGradleProperties {
     const val NATIVE_TVOS_X64 = "skiko.native.tvos.x64.enabled"
     const val NATIVE_MAC = "skiko.native.mac.enabled"
     const val NATIVE_LINUX = "skiko.native.linux.enabled"
+    const val NATIVE_MINGW = "skiko.native.mingw.enabled"
 }
 
 class SkikoArtifacts(

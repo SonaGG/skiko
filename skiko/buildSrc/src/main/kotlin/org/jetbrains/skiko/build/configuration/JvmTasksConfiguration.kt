@@ -21,6 +21,7 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.skiko.build.context.SkikoModuleKind
 import org.jetbrains.skiko.build.context.SkikoProjectContext
+import org.jetbrains.skiko.build.context.supportNativeMingw
 import org.jetbrains.skiko.build.context.registerOrGetSkiaDirProvider
 import org.jetbrains.skiko.build.cpp.CompileSkikoCppTask
 import org.jetbrains.skiko.build.cpp.CompileSkikoObjCTask
@@ -392,7 +393,7 @@ fun SkikoProjectContext.createCompileJvmNativeBridgesTask(
     buildVariant.set(buildType)
     compiler.set(jvmCompile.flatMap { it.compiler })
     flags.set(jvmCompile.flatMap { it.flags })
-    sourceRoots.set(projectDirs("src/nativeJsMain/cpp"))
+    sourceRoots.set(projectDirs("src/nativeJsMain/cpp") + if (skiko.includeTestHelpers) projectDirs("src/nativeJsTest/cpp") else emptyList())
     val projectDir = project.projectDir
     includeHeadersNonRecursive(projectDir.resolve("src/nativeJsMain/cpp"))
     includeHeadersNonRecursive(projectDir.resolve("src/commonMain/cpp/common/include"))
@@ -493,7 +494,10 @@ fun SkikoProjectContext.configureGenerateSymbolsList(
                 task.outDir.get().asFile.walk().filter { it.name.endsWith(".o") }.toList()
             })
             nativeBoundSymbols.set(project.provider {
-                project.fileTree("src") { include("commonMain/**/*.kt", "nativeMain/**/*.kt", "nativeJsMain/**/*.kt") }
+                project.fileTree("src") {
+                    include("commonMain/**/*.kt", "nativeMain/**/*.kt", "nativeJsMain/**/*.kt")
+                    if (skiko.includeTestHelpers) include("commonTest/**/*.kt", "nativeTest/**/*.kt")
+                }
                     .flatMap { file -> Regex("""@(?:ExternalSymbolName|SymbolName)\("([^"]+)"\)""").findAll(file.readText()).map { it.groupValues[1] } }
                     .distinct()
             })
@@ -784,7 +788,7 @@ fun SkikoProjectContext.createSkikoJvmJarTask(
     val skiaBindingsDir = registerOrGetSkiaDirProvider(os, arch)
     val compileBindings = createCompileJvmBindingsTask(os, arch, skiaBindingsDir)
     val objcCompile = if (os == OS.MacOS) createObjcCompileTask(os, arch, skiaBindingsDir) else null
-    val nativeBridges = if (os.isWindows && kind == SkikoModuleKind.CORE && skiko.includeNativeBridges) {
+    val nativeBridges = if (os.isWindows && kind == SkikoModuleKind.CORE && project.supportNativeMingw) {
         createCompileJvmNativeBridgesTask(os, arch, skiaBindingsDir, compileBindings)
     } else {
         null

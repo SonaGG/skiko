@@ -41,6 +41,7 @@ import org.jetbrains.skiko.build.context.supportNativeIosArm64
 import org.jetbrains.skiko.build.context.supportNativeIosSimulatorArm64
 import org.jetbrains.skiko.build.context.supportNativeIosX64
 import org.jetbrains.skiko.build.context.supportNativeLinux
+import org.jetbrains.skiko.build.context.supportNativeMingw
 import org.jetbrains.skiko.build.context.supportNativeMac
 import org.jetbrains.skiko.build.context.supportNativeTvosArm64
 import org.jetbrains.skiko.build.context.supportNativeTvosSimulatorArm64
@@ -337,6 +338,9 @@ kotlin {
     if (supportNativeLinux) {
         skikoProjectContext.configureNativeTarget(OS.Linux, Arch.X64, linuxX64())
         skikoProjectContext.configureNativeTarget(OS.Linux, Arch.Arm64, linuxArm64())
+    }
+    if (supportNativeMingw) {
+        skikoProjectContext.configureNativeTarget(OS.Windows, Arch.X64, mingwX64())
     }
     if (supportNativeIosArm64) {
         skikoProjectContext.configureNativeTarget(OS.IOS, Arch.Arm64, iosArm64())

@@ -238,8 +238,11 @@ val Project.supportNativeMac: Boolean
 val Project.supportNativeLinux: Boolean
     get() = supportAllNative || findProperty(SkikoGradleProperties.NATIVE_LINUX) == "true" || isInIdea
 
+val Project.supportNativeMingw: Boolean
+    get() = supportAllNative || findProperty(SkikoGradleProperties.NATIVE_MINGW) == "true" || isInIdea
+
 val Project.supportAnyNative: Boolean
-    get() = supportAllNative || supportAnyNativeIos || supportNativeMac || supportNativeLinux
+    get() = supportAllNative || supportAnyNativeIos || supportNativeMac || supportNativeLinux || supportNativeMingw
 
 val Project.supportWeb: Boolean
     get() = findProperty(SkikoGradleProperties.WASM_ENABLED) == "true" || isInIdea

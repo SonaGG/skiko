@@ -7,13 +7,17 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Usage
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByName
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeHostTest
 import org.jetbrains.skiko.build.context.SkikoModuleKind
 import org.jetbrains.skiko.build.context.SkikoProjectContext
 import org.jetbrains.skiko.build.context.registerOrGetSkiaDirProvider
@@ -293,6 +297,27 @@ fun SkikoProjectContext.configureNativeTarget(
 
     if (kind != SkikoModuleKind.EXTENSION) {
         target.generateVersion(os, arch, skiko)
+    }
+    if (os == OS.Windows) {
+        val linkJvmBindings = "linkJvmBindings" + joinToTitleCamelCase(os.id, arch.id)
+        val linkDir = layout.buildDirectory.dir("out/link/${buildType.id}-${os.id}-jvm-${arch.id}").get().asFile
+        val importLibrary = linkDir.resolve("skiko-${os.id}-${arch.id}.lib").absolutePath
+        target.binaries.all { freeCompilerArgs += listOf("-include-binary", importLibrary) }
+        target.compilations.all {
+            compilerOptions.configure { freeCompilerArgs.addAll("-include-binary", importLibrary) }
+            compileTaskProvider.configure { dependsOn(linkJvmBindings) }
+        }
+        val skiaBinDir = registerOrGetSkiaDirProvider(os, arch, false).map { it.resolve("out/${buildType.id}-${os.id}-${arch.id}") }
+        val copyTestRuntime = project.registerSkikoTask<Copy>("copyTestRuntime", os, arch) {
+            dependsOn(linkJvmBindings)
+            from(linkDir) { include("*.dll") }
+            from(skiaBinDir) { include("icudtl.dat") }
+            into(target.binaries.getTest(NativeBuildType.DEBUG).outputDirectory)
+        }
+        tasks.withType<KotlinNativeHostTest>().matching { it.name == "${target.name}Test" }.configureEach {
+            dependsOn(copyTestRuntime)
+        }
+        return
     }
     val isUikitSim = target.isUikitSimulator()
 
