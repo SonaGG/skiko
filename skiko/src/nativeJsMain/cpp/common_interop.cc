@@ -344,6 +344,7 @@ SKIKO_EXPORT void skiko_initCallbacks(KOpaquePointer callBoolean, KOpaquePointer
     callNativePointerCallbackImpl = reinterpret_cast<SkikoCallNativePointerCallback>(callNativePointer);
     callVoidCallbackImpl = reinterpret_cast<SkikoCallVoidCallback>(callVoid);
     disposeCallbackImpl = reinterpret_cast<SkikoDisposeCallback>(dispose);
+    SkLoadICU();
 }
 
 void disposeCallback(KInteropPointer cb) {
