@@ -35,6 +35,9 @@ class RenderNodeContext internal constructor(ptr: NativePointer, managed: Boolea
         Stats.onNativeCall()
     }
 
+    @Deprecated("Use the constructor that takes snapshotCache", level = DeprecationLevel.HIDDEN)
+    constructor(measureDrawBounds: Boolean) : this(measureDrawBounds, true)
+
     fun setLightingInfo(
         centerX: Float = Float.MIN_VALUE,
         centerY: Float = Float.MIN_VALUE,
