@@ -321,25 +321,6 @@ namespace skija {
 
             return features;
         }
-
-        // every FontFeature is represented by 2 ints in resultArr
-        void writeToIntArray(std::vector<skia::textlayout::FontFeature> features, int* resultArr) {
-            for (int i = 0; i < features.size(); ++i) {
-                int j = i * 2;
-                resultArr[j] = skija::FontFeature::FourByteTag::fromString(features[i].fName);
-                resultArr[j + 1] = features[i].fValue;;
-            }
-        }
-
-        namespace FourByteTag {
-            int fromString(SkString str) {
-                int code1 = (int)str[0];
-                int code2 = (int)str[1];
-                int code3 = (int)str[2];
-                int code4 = (int)str[3];
-                return (code1 & 0xFF << 24) | (code2 & 0xFF << 16) | (code3 & 0xFF << 8) | (code4 & 0xFF);
-            }
-        }
     }
 
     namespace FontMgr {
@@ -1081,17 +1062,6 @@ void deleteJBytes(void* addr, void*) {
 namespace skija {
 
     namespace SamplingMode {
-        SkSamplingOptions unpack(jlong val) {
-            if (0x8000000000000000 & val) {
-                val = val & 0x7FFFFFFFFFFFFFFF;
-                float* ptr = reinterpret_cast<float*>(&val);
-                return SkSamplingOptions(SkCubicResampler {ptr[1], ptr[0]});
-            } else {
-                int32_t filter = (int32_t) ((val >> 32) & 0xFFFFFFFF);
-                int32_t mipmap = (int32_t) (val & 0xFFFFFFFF);
-                return SkSamplingOptions(static_cast<SkFilterMode>(filter), static_cast<SkMipmapMode>(mipmap));
-            }
-        }
 
         SkSamplingOptions unpackFrom2Ints(JNIEnv* env, jint samplingModeVal1, jint samplingModeVal2) {
             if (0x80000000 & samplingModeVal1) {

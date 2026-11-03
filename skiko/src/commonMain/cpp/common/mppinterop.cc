@@ -1,6 +1,12 @@
 #include "mppinterop.h"
 #include "RunRecordClone.hh"
 #include "src/core/SkUTF.h"
+#include "SkSamplingOptions.h"
+#include "TextStyle.h"
+#include "include/private/SkTemplates.h"
+#include "unicode/ubrk.h"
+#include "unicode/uloc.h"
+#include "unicode/utext.h"
 #include <iostream>
 
 int64_t packTwoInts(int32_t a, int32_t b) {
@@ -256,5 +262,71 @@ namespace skija {
         }
 
         return fPos16;
+    }
+}
+
+namespace skija {
+    namespace SamplingMode {
+        SkSamplingOptions unpack(int64_t val) {
+            if (0x8000000000000000 & val) {
+                val = val & 0x7FFFFFFFFFFFFFFF;
+                float* ptr = reinterpret_cast<float*>(&val);
+                return SkSamplingOptions(SkCubicResampler {ptr[1], ptr[0]});
+            } else {
+                int32_t filter = (int32_t) ((val >> 32) & 0xFFFFFFFF);
+                int32_t mipmap = (int32_t) (val & 0xFFFFFFFF);
+                return SkSamplingOptions(static_cast<SkFilterMode>(filter), static_cast<SkMipmapMode>(mipmap));
+            }
+        }
+    }
+
+    namespace FontFeature {
+        namespace FourByteTag {
+            int fromString(SkString str) {
+                int code1 = (int)str[0];
+                int code2 = (int)str[1];
+                int code3 = (int)str[2];
+                int code4 = (int)str[3];
+                return (code1 & 0xFF << 24) | (code2 & 0xFF << 16) | (code3 & 0xFF << 8) | (code4 & 0xFF);
+            }
+        }
+
+        void writeToIntArray(std::vector<skia::textlayout::FontFeature> features, int* resultArr) {
+            for (int i = 0; i < features.size(); ++i) {
+                int j = i * 2;
+                resultArr[j] = skija::FontFeature::FourByteTag::fromString(features[i].fName);
+                resultArr[j + 1] = features[i].fValue;;
+            }
+        }
+    }
+
+    namespace shaper {
+        using ICUUText = std::unique_ptr<UText, SkFunctionObject<utext_close>>;
+
+        std::shared_ptr<UBreakIterator> graphemeBreakIterator(SkString& text) {
+            UErrorCode status = U_ZERO_ERROR;
+            ICUUText utext(utext_openUTF8(nullptr, text.c_str(), text.size(), &status));
+            if (U_FAILURE(status)) {
+                SkDEBUGF("utext_openUTF8 error: %s", u_errorName(status));
+                return nullptr;
+            }
+
+            std::shared_ptr<UBreakIterator> graphemeIter(
+                ubrk_open(static_cast<UBreakIteratorType>(UBreakIteratorType::UBRK_CHARACTER), uloc_getDefault(), nullptr, 0, &status),
+                [](UBreakIterator* p) { ubrk_close(p); }
+            );
+            if (U_FAILURE(status)) {
+                SkDEBUGF("ubrk_open error: %s", u_errorName(status));
+                return nullptr;
+            }
+
+            ubrk_setUText(graphemeIter.get(), utext.get(), &status);
+            if (U_FAILURE(status)) {
+                SkDEBUGF("ubrk_setUText error: %s", u_errorName(status));
+                return nullptr;
+            }
+
+            return graphemeIter;
+        }
     }
 }

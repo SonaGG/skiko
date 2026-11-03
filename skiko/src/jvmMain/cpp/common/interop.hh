@@ -320,7 +320,7 @@ namespace skija {
     }
 
     namespace SamplingMode {
-            SkSamplingOptions unpack(jlong val);
+            SkSamplingOptions unpack(int64_t val);
             SkSamplingOptions unpackFrom2Ints(JNIEnv* env, jint val1, jint val2);
         }
 

@@ -31,7 +31,7 @@
 
 namespace skija {
     namespace SamplingMode {
-        SkSamplingOptions unpack(KLong val);
+        SkSamplingOptions unpack(int64_t val);
         SkSamplingOptions unpackFrom2Ints(KInt val1, KInt val2);
     }
 
