@@ -277,3 +277,20 @@ SKIKO_EXPORT KNativePointer org_jetbrains_skia_Surface__1nGetSurfaceRecordingCon
     SkSurface* surface = reinterpret_cast<SkSurface*>((ptr));
     return reinterpret_cast<KNativePointer>(surface->recordingContext());
 }
+
+SKIKO_EXPORT KNativePointer org_jetbrains_skia_Surface__1nMakeFromBackendTexture
+  (KNativePointer pContext, KNativePointer pBackendTexture, KInt surfaceOrigin, KInt sampleCount, KInt colorType, KNativePointer colorSpacePtr, KInteropPointer surfacePropsInts) {
+    GrDirectContext* context = reinterpret_cast<GrDirectContext*>(pContext);
+    GrBackendTexture* backendTexture = reinterpret_cast<GrBackendTexture*>(pBackendTexture);
+    sk_sp<SkColorSpace> colorSpace = sk_ref_sp<SkColorSpace>(reinterpret_cast<SkColorSpace*>(colorSpacePtr));
+    std::unique_ptr<SkSurfaceProps> surfaceProps = skija::SurfaceProps::toSkSurfaceProps(surfacePropsInts);
+    sk_sp<SkSurface> surface = SkSurfaces::WrapBackendTexture(
+        static_cast<GrRecordingContext*>(context),
+        *backendTexture,
+        static_cast<GrSurfaceOrigin>(surfaceOrigin),
+        sampleCount,
+        static_cast<SkColorType>(colorType),
+        colorSpace,
+        surfaceProps.get());
+    return reinterpret_cast<KNativePointer>(surface.release());
+}

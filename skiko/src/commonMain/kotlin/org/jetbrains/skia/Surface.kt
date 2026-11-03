@@ -298,6 +298,36 @@ class Surface : RefCnt {
             }
         }
 
+        fun makeFromBackendTexture(
+            context: DirectContext,
+            backendTexture: BackendTexture,
+            origin: SurfaceOrigin,
+            sampleCount: Int,
+            colorType: ColorType,
+            colorSpace: ColorSpace?,
+            surfaceProps: SurfaceProps? = null
+        ): Surface? {
+            return try {
+                Stats.onNativeCall()
+                val ptr = interopScope {
+                    _nMakeFromBackendTexture(
+                        getPtr(context),
+                        getPtr(backendTexture),
+                        origin.ordinal,
+                        sampleCount,
+                        colorType.ordinal,
+                        getPtr(colorSpace),
+                        toInterop(surfaceProps?.packToIntArray())
+                    )
+                }
+                if (ptr == NullPointer) null else Surface(ptr, context)
+            } finally {
+                reachabilityBarrier(context)
+                reachabilityBarrier(backendTexture)
+                reachabilityBarrier(colorSpace)
+            }
+        }
+
         fun makeFromMTKView(
             context: DirectContext,
             mtkViewPtr: NativePointer,
@@ -1118,6 +1148,18 @@ private external fun _nMakeFromBackendRenderTarget(
     pContext: NativePointer,
     pBackendRenderTarget: NativePointer,
     surfaceOrigin: Int,
+    colorType: Int,
+    colorSpacePtr: NativePointer,
+    surfaceProps: InteropPointer
+): NativePointer
+
+@ExternalSymbolName("org_jetbrains_skia_Surface__1nMakeFromBackendTexture")
+@ForceNativeThreadState
+private external fun _nMakeFromBackendTexture(
+    pContext: NativePointer,
+    pBackendTexture: NativePointer,
+    surfaceOrigin: Int,
+    sampleCount: Int,
     colorType: Int,
     colorSpacePtr: NativePointer,
     surfaceProps: InteropPointer
